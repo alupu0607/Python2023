@@ -1,0 +1,74 @@
+COURSES - PYTHON - 
+--------------------------------------------------------------
+CURS 1
+complex numbers in python => x = 1.2j
+5/2 => imi da rezultatul in float
+5//2 => imi da rezultatul in int
+
+x = 10.0 // 3 => rezultatul este 3.0
+x = 11.9 //3 => result will be 3.0
+
+
+s = "Grade: %d"%10
+s = "Name: %(name)8s Grade: %(student_grade)d" % {"name":"Ion" ,
+
+"student_grade":10}
+
+s[-1] => ultimul caracter
+s[2:-4] => din "PythonExam" => "thon"
+s = "PythonExam" #s is “PythonExam”
+
+s[1:7:2] #Result is ”yhn” (Going from index 1, to index 7
+
+#with step 2 (1,3,5) ➔ PythonExam
+
+
+ord(), chr()
+
+Function parameters can have default values. Once a parameter is defined using a
+default value, every parameter that is declared after it should have default values!
+
+-----------------------------------------------------------------
+
+CURS 2
+
+lambda in Python => Should be declared explicitly
+
+addition = lambda x,y: x+y
+print (addition(3,5))
+
+
+a list is a mutable vector
+tuple => immutable vector
+[1,2] * 5 => [1,2, 1,2, 1,2, 1,2, 1,2]
+
+xe pot concatena tuplele si listele:
+x = ('A', 2)
+y = ('B', 3)
+z= x+y => z = ('A', 2, 'B', 3)
+for i in (1,2,3,4,5) => 1 2 3 4 5
+
+
+!!!!!!!!!!!! ca sa enumeram intr-o lista si sa ne dea si indexul totodata
+One can also use the enumerate keyword to enumerate a list and get the index of
+the item at the same time:
+
+for index,name in enumerate(["Dragos","Mihai","Nicu","Vlad"]):
+	print("Index:%d => %s"%(index,name))
+for index,name in enumerate(["Dragos","Mihai","Nicu","Vlad"], 2 ):
+
+print("Index:%d => %s"%(index,name))
+ 
+
+x = [i for i in range(1,100) if i % 23 == 0]
+x=[[x, y] for x in range(1,10) for y in range(1,10) if (x+y)%7==0]
+
+
+append - adaug al final
+extend e ca un fel de append dar putem adauga mai multe elemente simultan
+
+x = [1,2,3]
+x.insert(1,"A") => ii zice exact pe ce pozitie inserez
+
+
+-------------------------------------------------------------------

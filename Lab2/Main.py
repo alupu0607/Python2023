@@ -199,7 +199,7 @@ def spectators(matrix):
     list_spectators = []
     for i in range (1,len(matrix)):
         for j in range (0,len(matrix[i])):
-            if matrix[i][j] < matrix[i-1][j]:
+            if matrix[i][j] <= matrix[i-1][j]:
                 list_spectators.append((i,j))
     return list_spectators
 
@@ -224,7 +224,7 @@ def combine_lists(*args):
     return result
 
 
-combined = combine_lists([1,2,3], [5,6,7], ["a", "b", "c"])
+combined = combine_lists([1,2,3,8], [5,6,7], ["a", "b", "c"])
 print(combined)
 
 
