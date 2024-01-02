@@ -70,6 +70,20 @@ class FunctionalitiesGUI:
                 result = self.redis_client.lists_del_lrem(*args)
             else:
                 result = "Invalid action"
+        elif data_type == "Sets":
+            if action == "Create":
+                keys = args[1].split(",")
+                result = self.redis_client.sets_sadd(args[0], *keys)
+            elif action == "Read":
+                result = self.redis_client.sets_smembers(*args)
+            elif action == "Update":
+                result = self.redis_client.sets_smove(*args)
+            elif action == "Delete":
+                keys = args[1].split(",")
+                result = self.redis_client.sets_srem(args[0], *keys)
+            else:
+                result = "Invalid action"
+
         else:
             result = "Invalid data type"
 
@@ -209,7 +223,67 @@ class FunctionalitiesGUI:
                 ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
                                                                                                      pady=5)
         elif data_type == "Sets":
-            ...
+            if action == "Create":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Member(s):").grid(row=0, column=2, padx=5, pady=5)
+                member_entry = ttk.Entry(frame)
+                member_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="SADD",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(),
+                                                                member_entry.get())).grid(row=0, column=4, padx=5,
+                                                                                          pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,
+                                                                                                     pady=5)
+            elif action == "Update":
+                ttk.Label(frame, text="Source Key:").grid(row=0, column=0, padx=5, pady=5)
+                source_entry = ttk.Entry(frame)
+                source_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Destination Key:").grid(row=0, column=2, padx=5, pady=5)
+                dest_entry = ttk.Entry(frame)
+                dest_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Member:").grid(row=0, column=4, padx=5, pady=5)
+                member_entry = ttk.Entry(frame)
+                member_entry.grid(row=0, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="SMOVE",
+                           command=lambda: self.execute_command(data_type, action, source_entry.get(), dest_entry.get(),
+                                                                member_entry.get())).grid(row=0, column=6, padx=5,
+                                                                                          pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
+                                                                                                     pady=5)
+            elif action == "Read":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Button(frame, text="SMEMBERS",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get())).grid(row=0,
+                                                                                                           column=2,
+                                                                                                           padx=5,
+                                                                                                           pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,
+                                                                                                     pady=5)
+            elif action == "Delete":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Member(s):").grid(row=0, column=2, padx=5, pady=5)
+                member_entry = ttk.Entry(frame)
+                member_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="SREM",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(),
+                                                                member_entry.get())).grid(row=0, column=4, padx=5,
+                                                                                          pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,
+                                                                                                     pady=5)
         elif data_type == "Hashes":
             ...
         elif data_type == "Sorted Sets":
@@ -254,39 +328,78 @@ class FunctionalitiesGUI:
         elif data_type == "Lists":
             if action == "Create":
                 info_text = (f"SYNTAX: LPUSH key element [element ...]\n\n"
-                            f"Insert all the specified values at the head of the list stored at key. \n\n"
-                            f"If key does not exist, it is created as empty list before performing the push operations."
-                            f" When key holds a value that is not a list, an error is returned.\n\n"
-                            f"redis > LPUSH mylist world\n\n"
-                            f"(integer) 1\n\n"
-                            f"redis > LPUSH mylist hello\n\n"
-                            f"redis(integer) 2\n\n")
-                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+                             f"Insert all the specified values at the head of the list stored at key. \n\n"
+                             f"If key does not exist, it is created as empty list before performing the push operations."
+                             f" When key holds a value that is not a list, an error is returned.\n\n"
+                             f"redis > LPUSH mylist world\n\n"
+                             f"(integer) 1\n\n"
+                             f"redis > LPUSH mylist hello\n\n"
+                             f"redis(integer) 2\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
             elif action == "Read":
                 info_text = (f"SYNTAX: LRANGE key start stop\n\n"
-                            f"Returns the specified elements of the list stored at key.\n\n"
-                            f"The offsets start and stop are zero-based indexes, with 0 being the first element of the list (the head of the list), 1 being the next element and so on)\n\n")
+                             f"Returns the specified elements of the list stored at key.\n\n"
+                             f"The offsets start and stop are zero-based indexes, with 0 being the first element of the list (the head of the list), 1 being the next element and so on)\n\n")
 
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
             elif action == "Update":
                 info_text = (f"SYNTAX: LINSERT key <BEFORE | AFTER> pivot element"
-                            f"Inserts element in the list stored at key either before or after the reference value pivot.\n\n"
-                            f"When key does not exist, it is considered an empty list and no operation is performed.\n\n"
-                            f"redis > RPUSH mylist Hello\n\n"
-                            f"(integer) 1 \n\n"
-                            f"redis > RPUSH mylist world \n\n"
-                            f"(integer) 2\n\n"
-                            f"redis > LINSERT mylist BEFORE World There\n\n"
-                            f"(integer 3)\n\n")
+                             f"Inserts element in the list stored at key either before or after the reference value pivot.\n\n"
+                             f"When key does not exist, it is considered an empty list and no operation is performed.\n\n"
+                             f"redis > RPUSH mylist Hello\n\n"
+                             f"(integer) 1 \n\n"
+                             f"redis > RPUSH mylist world \n\n"
+                             f"(integer) 2\n\n"
+                             f"redis > LINSERT mylist BEFORE World There\n\n"
+                             f"(integer 3)\n\n")
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
             elif action == "Delete":
                 info_text = (
-                            f"SYNTAX: LREM key count element\n\n"
-                            f"Removes the first count occurrences of elements equal to element from the list stored at key.\n\n"
-                            f"For example, LREM list -2 hello will remove the last two occurrences of 'hello' in the list stored at list.\n\n"
-                            f"Note that non-existing keys are treated like empty lists, so when key does not exist, the command will always return 0."
+                    f"SYNTAX: LREM key count element\n\n"
+                    f"Removes the first count occurrences of elements equal to element from the list stored at key.\n\n"
+                    f"For example, LREM list -2 hello will remove the last two occurrences of 'hello' in the list stored at list.\n\n"
+                    f"Note that non-existing keys are treated like empty lists, so when key does not exist, the command will always return 0."
+                )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+        elif data_type == "Sets":
+            if action == "Create":
+                info_text = (f"SADD key member [member ...]\n\n"
+                            f"Add the specified members to the set stored at key. \n\n"
+                            f"Specified members that are already a member of this set are ignored."
+                            f"If key does not exist, a new set is created before adding the specified members.\n\n"
+                            f"redis > SADD myset Hello\n\n"
+                            f"(integer) 1\n\n"
+                            f"redis > SADD myset World\n\n"
+                            f"redis(integer) 1\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+            elif action == "Read":
+                info_text = (f"SYNTAX: SMEMBERS key\n\n"
+                            f"Returns all the members of the set value stored at key.\n\n"
+                            f"The offsets start and stop are zero-based indexes, with 0 being the first element of the list (the head of the list), 1 being the next element and so on)\n\n")
+
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Update":
+                info_text = (f"SMOVE source destination member"
+                            f"Move member from the set at source to the set at destination.\n\n"
+                            f"If the source set does not exist or does not contain the specified element, no operation is performed and 0 is returned.\n\n"
+                            f"Otherwise, the element is removed from the source set and added to the destination set.\n\n"
+                            f"When the specified element already exists in the destination set, it is only removed from the source set.\n\n"
+                            f"redis > SADD myset one\n\n"
+                            f"(integer) 1 \n\n"
+                            f"redis > SADD myset two \n\n"
+                            f"(integer) 1\n\n"
+                            f"redis > SMOVE myset myotherset two\n\n"
+                            f"(integer) 1\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Delete":
+                info_text = (
+                            f"SYNTAX: SREM key member [member ...]\n\n"
+                            f"Remove the specified members from the set stored at key.\n\n"
+                            f" Specified members that are not a member of this set are ignored.\n\n"
+                            f"If key does not exist, it is treated as an empty set and this command returns 0."
                              )
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+
 
     def stop(self):
         self.redis_client.close()

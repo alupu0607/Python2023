@@ -66,6 +66,26 @@ class RedisClient:
         command = f"*4\r\n$4\r\nLREM\r\n${len(key)}\r\n{key}\r\n${len(str(count))}\r\n{count}\r\n${len(str(element))}\r\n{element}\r\n"
         return self._send_command(command)
 
+    def sets_srem(self, key, *members):
+        command = f"*{2 + len(members)}\r\n$4\r\nSREM\r\n${len(key)}\r\n{key}\r\n"
+        for member in members:
+            command += f"${len(member)}\r\n{member}\r\n"
+        return self._send_command(command)
+
+    def sets_sadd(self, key, *members):
+        command = f"*{2 + len(members)}\r\n$4\r\nSADD\r\n${len(key)}\r\n{key}\r\n"
+        for member in members:
+            command += f"${len(member)}\r\n{member}\r\n"
+        return self._send_command(command)
+
+    def sets_smembers(self, key):
+        command = f"*2\r\n$8\r\nSMEMBERS\r\n${len(key)}\r\n{key}\r\n"
+        return self._send_command(command)
+
+    def sets_smove(self, source, destination, member):
+        command = f"*4\r\n$5\r\nSMOVE\r\n${len(source)}\r\n{source}\r\n${len(destination)}\r\n{destination}\r\n${len(member)}\r\n{member}\r\n"
+        return self._send_command(command)
+
     def ping(self):
         try:
             response = self._send_command("*1\r\n$4\r\nPING\r\n")
@@ -78,20 +98,24 @@ class RedisClient:
 
 
 redis_client = RedisClient()
-# LPUSH
-lpush_response = redis_client.lists_set_lpush("my_list2", "value1", "value2", "value3")
-print("LPUSH Response:", lpush_response)
+srem_response = redis_client.sets_srem("my_set", "member1", "member2")
+print("SREM Response:", srem_response)
 
-# LINSERT
-#linsert_response = redis_client.lists_update_linsert("my_list", "AFTER", "value1", "new_value")
-#print("LINSERT Response:", linsert_response)
+# SADD
+sadd_response = redis_client.sets_sadd("my_set", "member3", "member4")
+print("SADD Response:", sadd_response)
 
-# LRANGE
-lrange_response = redis_client.lists_get_lrange("my_list2", 0, -1)
-print("LRANGE Response:", lrange_response)
 
-# LREM
-lrem_response = redis_client.lists_del_lrem("my_list", 1, "value2")
-print("LREM Response:", lrem_response)
+sadd_response2 = redis_client.sets_sadd("my_set2", "ala", "bala")
+print("SADD Response:", sadd_response2)
+
+# SMEMBERS
+smembers_response = redis_client.sets_smembers("my_set")
+print("SMEMBERS Response:", smembers_response)
+
+# SMOVE
+smove_response = redis_client.sets_smove("my_set2", "my_set1", "ala")
+print("SMOVE Response:", smove_response)
+
 redis_client.close()
 
