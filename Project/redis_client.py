@@ -23,6 +23,25 @@ class RedisClient:
         self._send_data(command)
         return self._receive_data()
 
+    def strings_set(self, key, value):
+        command = f"*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(str(value))}\r\n{value}\r\n"
+        return self._send_command(command)
+
+    def strings_get(self, key):
+        command = f"*2\r\n$3\r\nGET\r\n${len(key)}\r\n{key}\r\n"
+        return self._send_command(command)
+
+    def strings_incrby(self, key, increment):
+        command = f"*3\r\n$6\r\nINCRBY\r\n${len(key)}\r\n{key}\r\n${len(str(increment))}\r\n{increment}\r\n"
+        return self._send_command(command)
+
+    def strings_del(self, *keys):
+        command = f"*{len(keys) + 1}\r\n$3\r\nDEL\r\n"
+        for key in keys:
+            command += f"${len(key)}\r\n{key}\r\n"
+        response = self._send_command(command)
+        return response
+
     def ping(self):
         try:
             response = self._send_command("*1\r\n$4\r\nPING\r\n")
@@ -34,9 +53,24 @@ class RedisClient:
         self.socket.close()
 
 # Example usage:
-#redis_client = RedisClient()
+redis_client = RedisClient()
 
-#ping_success = redis_client.ping()
-#print("Ping success:", ping_success)
+# Set a string
+set_response = redis_client.strings_set("my_key4", "my_value")
+print("SET Response:", set_response)
 
-#redis_client.close()
+# Get a string
+get_response = redis_client.strings_get("my_key")
+print("GET Response:", get_response)
+
+# Increment a string by a certain value
+incrby_response = redis_client.strings_incrby("counter", 5)
+print("INCRBY Response:", incrby_response)
+
+# Delete multiple keys
+del_response = redis_client.strings_del("my_key4", "key2", "key3")
+print("DEL Response:", del_response)
+
+
+redis_client.close()
+

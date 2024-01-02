@@ -42,9 +42,20 @@ class FunctionalitiesGUI:
         file_menu.add_command(label="Open Welcome GUI", command=self.open_welcome_gui)
         file_menu.add_command(label="Exit", command=self.stop)
 
-    def execute_command(self, data_type, action, value):
-        result = f"Executing {action} on {data_type} with value {value}..."
-        print(result)
+    def execute_command(self, data_type, action, *args):
+        if data_type == "Strings":
+            if action == "Create":
+                result = self.redis_client.strings_set(*args)
+            elif action == "Read":
+                result = self.redis_client.strings_get(*args)
+            elif action == "Update":
+                result = self.redis_client.strings_incrby(*args)
+            elif action == "Delete":
+                keys = args[0].split(",")
+                result = self.redis_client.strings_del(*keys)
+            else:
+                result = "Invalid action"
+        result = f"Data-type-{data_type},Action-{action}, Introduced: {args} => Response: {result}"
         self.result_label.config(text=result)
 
     def create_tab(self, data_type):
@@ -63,21 +74,88 @@ class FunctionalitiesGUI:
     def create_buttons(self, frame, data_type, action):
         if data_type == "Strings":
             if action == "Create":
-                ttk.Label(frame, text="Value:").grid(row=0, column=0, padx=5, pady=5)
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Value:").grid(row=0, column=2, padx=5, pady=5)
                 value_entry = ttk.Entry(frame)
-                value_entry.grid(row=0, column=1, padx=5, pady=5)
-                ttk.Button(frame, text="Create",command=lambda: self.execute_command(data_type, action, value_entry.get())).grid(row=0,column=2,padx=5,pady=5)
-                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3, columnspan=3, pady=5)
+                value_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="SET", command=lambda: self.execute_command(data_type, action, name_entry.get(),value_entry.get())).grid(row=0,column=4,padx=5,pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,pady=5)
             elif action == "Read":
-                pass
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+                ttk.Button(frame, text="GET",command=lambda: self.execute_command(data_type, action,name_entry.get(), "" )).grid(row=0,column=2,padx=5, pady=5)
+                ttk.Button(frame, text="❔",command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,columnspan=3,pady=5)
             elif action == "Update":
-                pass
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Increment:").grid(row=0, column=2, padx=5, pady=5)
+                value_entry = ttk.Entry(frame)
+                value_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="INCRBY", command=lambda: self.execute_command(data_type, action, name_entry.get(),value_entry.get())).grid(row=0, column=4,padx=5,pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,pady=5)
             elif action == "Delete":
-                pass
+                ttk.Label(frame, text="Key(s):").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+                ttk.Button(frame, text="DEL",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(), "")).grid(row=0,column=2,
+                                                                                                               padx=5,
+                                                                                                               pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,columnspan=3,pady=5)
+        elif data_type == "Lists":
+            ...
+        elif data_type == "Sets":
+            ...
+        elif data_type == "Hashes":
+            ...
+        elif data_type == "Sorted Sets":
+            ...
 
     def popup_info(self, data_type, action):
-        info_text = f"Information about {action} operation on {data_type}:\n\n"  # Add your information here
-        messagebox.showinfo(f"{action} {data_type} Info", info_text)
+        if data_type == "Strings":
+            if action == "Create":
+                info_text = (f"Set key to hold the string value. If key already holds a value, it is overwritten, regardless of its type. Any previous time to live associated with the key is discarded on successful SET operation."
+                            f"redis> SET mykey Hello\n\n"
+                            f"OK\n\n"
+                            f"redis> GET mykey\n"
+                            f"Hello\n\n"
+                            f"redis> SET anotherkey will expire in a minute EX 60\n\n"
+                            f"OK\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+            elif action == "Read":
+                info_text = (f"Get the value of key. If the key does not exist the special value nil is returned. An error is returned if the value stored at key is not a string, because GET only handles string values.\n\n"
+                            f"redis > GET  nonexisting\n\n"
+                            f"(nil)\n\n"
+                            f"redis > GET mykey \n\n"
+                            f"Hello")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Update":
+                info_text = (f"Increments the number stored at key by increment. If the key does not exist, it is set to 0 before performing the operation. An error is returned if the key contains a value of the wrong type or contains a string that can not be represented as integer. This operation is limited to 64 bit signed integers.\n\n"
+                            f"redis> SET mykey 10\n\n"
+                            f"OK\n\n"
+                            f"redis> INCRBY mykey 5\n\n"
+                            f"(integer) 15")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Delete":
+                info_text = (f"Removes the specified keys. A key is ignored if it does not exist.\n\n"
+                             f"Examples: redis> SET key1 Hello\n\n"
+                            f"OK\n\n"
+                            f"redis> SET key2 World\n\n"
+                            f"OK\n\n"
+                            f"redis> DEL key1 key2 key3\n\n"
+                            f"(integer) 2\n\n\n\n"
+                            f"USAGE GUI: COMMA SEPARATED KEYS, NO WHITESPACES"
+                             )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+
     def stop(self):
         self.redis_client.close()
         self.master.destroy()
