@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, scrolledtext
 from redis_client import RedisClient
 import sys
 
@@ -10,8 +10,8 @@ class FunctionalitiesGUI:
 
         self.functionalities_window = tk.Toplevel(self.master)
         self.functionalities_window.title('RESP GUI')
-        self.functionalities_window.minsize(800, 400)
-        self.functionalities_window.maxsize(800, 400)
+        self.functionalities_window.minsize(900, 400)
+        self.functionalities_window.maxsize(900, 400)
 
         self.functionality_info_label = ttk.Label(self.functionalities_window, text="CRUD Operations", font=('Verdana', 10))
         self.functionality_info_label.pack(pady=5)
@@ -30,7 +30,10 @@ class FunctionalitiesGUI:
 
         self.notebook = ttk.Notebook(self.functionalities_window)
 
-        self.result_label = ttk.Label(self.functionalities_window, text="", font=('Verdana', 12), foreground='green')
+        self.result_label = scrolledtext.ScrolledText(self.functionalities_window, wrap=tk.WORD, width=80, height=10)
+        self.result_label.pack(pady=10)
+        self.result_label.insert(tk.END, "Waiting for a command...")
+        self.result_label.config(state=tk.DISABLED)
         self.result_label.pack(pady=10)
 
         menubar = tk.Menu(self.functionalities_window)
@@ -55,8 +58,26 @@ class FunctionalitiesGUI:
                 result = self.redis_client.strings_del(*keys)
             else:
                 result = "Invalid action"
-        result = f"Data-type-{data_type},Action-{action}, Introduced: {args} => Response: {result}"
-        self.result_label.config(text=result)
+        elif data_type == "Lists":
+            if action == "Create":
+                keys = args[1].split(",")
+                result = self.redis_client.lists_set_lpush(args[0], *keys)
+            elif action == "Update":
+                result = self.redis_client.lists_update_linsert(*args)
+            elif action == "Read":
+                result = self.redis_client.lists_get_lrange(*args)
+            elif action == "Delete":
+                result = self.redis_client.lists_del_lrem(*args)
+            else:
+                result = "Invalid action"
+        else:
+            result = "Invalid data type"
+
+        self.result_label.config(state=tk.NORMAL)
+        self.result_label.delete("1.0", tk.END)
+        self.result_label.insert(tk.END,
+                                 f"Data-type-{data_type}, Action-{action}, Introduced: {args} => Response: {result}")
+        self.result_label.config(state=tk.DISABLED)
 
     def create_tab(self, data_type):
         frame = ttk.Frame(self.notebook)
@@ -88,7 +109,7 @@ class FunctionalitiesGUI:
                 ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
                 name_entry = ttk.Entry(frame)
                 name_entry.grid(row=0, column=1, padx=5, pady=5)
-                ttk.Button(frame, text="GET",command=lambda: self.execute_command(data_type, action,name_entry.get(), "" )).grid(row=0,column=2,padx=5, pady=5)
+                ttk.Button(frame, text="GET",command=lambda: self.execute_command(data_type, action,name_entry.get())).grid(row=0,column=2,padx=5, pady=5)
                 ttk.Button(frame, text="❔",command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,columnspan=3,pady=5)
             elif action == "Update":
                 ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
@@ -106,12 +127,87 @@ class FunctionalitiesGUI:
                 name_entry = ttk.Entry(frame)
                 name_entry.grid(row=0, column=1, padx=5, pady=5)
                 ttk.Button(frame, text="DEL",
-                           command=lambda: self.execute_command(data_type, action, name_entry.get(), "")).grid(row=0,column=2,
+                           command=lambda: self.execute_command(data_type, action, name_entry.get())).grid(row=0,column=2,
                                                                                                                padx=5,
                                                                                                                pady=5)
                 ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,columnspan=3,pady=5)
+
+
         elif data_type == "Lists":
-            ...
+            if action == "Create":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Value(s):").grid(row=0, column=2, padx=5, pady=5)
+                value_entry = ttk.Entry(frame)
+                value_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="LPUSH", command=lambda: self.execute_command(data_type, action, name_entry.get(),value_entry.get())).grid(row=0,column=4,padx=5,pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,pady=5)
+            elif action == "Read":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Start:").grid(row=0, column=2, padx=5, pady=5)
+                start_entry = ttk.Entry(frame)
+                start_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Stop:").grid(row=0, column=4, padx=5, pady=5)
+                stop_entry = ttk.Entry(frame)
+                stop_entry.grid(row=0, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="LRANGE",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(), start_entry.get(),
+                                                                stop_entry.get())).grid(row=0, column=6, padx=5, pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
+                                                                                                     pady=5)
+
+            elif action == "Update":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                value_entry = ttk.Entry(frame)
+                value_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                options = ["BEFORE", "AFTER"]
+                linsert_option = ttk.Combobox(frame, values=options)
+                linsert_option.set(options[0])
+                linsert_option.grid(row=0, column=2, padx=5, pady=5)
+
+                ttk.Label(frame, text="Pivot:").grid(row=0, column=3, padx=5, pady=5)
+                pivot_entry = ttk.Entry(frame)
+                pivot_entry.grid(row=0, column=4, padx=5, pady=5)
+
+                ttk.Label(frame, text="Element:").grid(row=0, column=5, padx=5, pady=5)
+                element_entry = ttk.Entry(frame)
+                element_entry.grid(row=0, column=6, padx=5, pady=5)
+
+                ttk.Button(frame, text="LINSERT",
+                           command=lambda: self.execute_command(data_type, action, value_entry.get(),
+                                                    linsert_option.get(), pivot_entry.get(),
+                                                    element_entry.get())).grid(row=0, column=7, padx=5,
+                                                                                         pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=8,
+                                                                                                     pady=5)
+
+            elif action == "Delete":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Count:").grid(row=0, column=2, padx=5, pady=5)
+                count_entry = ttk.Entry(frame)
+                count_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Element:").grid(row=0, column=4, padx=5, pady=5)
+                element_entry = ttk.Entry(frame)
+                element_entry.grid(row=0, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="LREM",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(), count_entry.get(),
+                                                                element_entry.get())).grid(row=0, column=6, padx=5, pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
+                                                                                                     pady=5)
         elif data_type == "Sets":
             ...
         elif data_type == "Hashes":
@@ -155,6 +251,42 @@ class FunctionalitiesGUI:
                             f"USAGE GUI: COMMA SEPARATED KEYS, NO WHITESPACES"
                              )
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+        elif data_type == "Lists":
+            if action == "Create":
+                info_text = (f"SYNTAX: LPUSH key element [element ...]\n\n"
+                            f"Insert all the specified values at the head of the list stored at key. \n\n"
+                            f"If key does not exist, it is created as empty list before performing the push operations."
+                            f" When key holds a value that is not a list, an error is returned.\n\n"
+                            f"redis > LPUSH mylist world\n\n"
+                            f"(integer) 1\n\n"
+                            f"redis > LPUSH mylist hello\n\n"
+                            f"redis(integer) 2\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+            elif action == "Read":
+                info_text = (f"SYNTAX: LRANGE key start stop\n\n"
+                            f"Returns the specified elements of the list stored at key.\n\n"
+                            f"The offsets start and stop are zero-based indexes, with 0 being the first element of the list (the head of the list), 1 being the next element and so on)\n\n")
+
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Update":
+                info_text = (f"SYNTAX: LINSERT key <BEFORE | AFTER> pivot element"
+                            f"Inserts element in the list stored at key either before or after the reference value pivot.\n\n"
+                            f"When key does not exist, it is considered an empty list and no operation is performed.\n\n"
+                            f"redis > RPUSH mylist Hello\n\n"
+                            f"(integer) 1 \n\n"
+                            f"redis > RPUSH mylist world \n\n"
+                            f"(integer) 2\n\n"
+                            f"redis > LINSERT mylist BEFORE World There\n\n"
+                            f"(integer 3)\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Delete":
+                info_text = (
+                            f"SYNTAX: LREM key count element\n\n"
+                            f"Removes the first count occurrences of elements equal to element from the list stored at key.\n\n"
+                            f"For example, LREM list -2 hello will remove the last two occurrences of 'hello' in the list stored at list.\n\n"
+                            f"Note that non-existing keys are treated like empty lists, so when key does not exist, the command will always return 0."
+                             )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
 
     def stop(self):
         self.redis_client.close()
@@ -178,8 +310,8 @@ class WelcomeGUI:
         self.master = master
 
         master.title('RESP GUI')
-        master.minsize(800, 400)
-        master.maxsize(800, 400)
+        master.minsize(900, 400)
+        master.maxsize(900, 400)
 
         self.label = ttk.Label(master, text="Welcome to RESP GUI!", font=('Verdana', 15))
         self.label.grid(row=0, column=0, pady=10)

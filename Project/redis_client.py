@@ -42,6 +42,30 @@ class RedisClient:
         response = self._send_command(command)
         return response
 
+    def lists_set_lpush(self, key, *values):
+        command = f"*{2 + len(values)}\r\n$5\r\nLPUSH\r\n${len(key)}\r\n{key}\r\n"
+        for value in values:
+            command += f"${len(str(value))}\r\n{value}\r\n"
+        return self._send_command(command)
+
+    def lists_update_linsert(self, key, position, pivot, *values):
+        options = {"BEFORE": "BEFORE", "AFTER": "AFTER"}
+        if position.upper() not in options:
+            raise ValueError("Invalid position. Use 'BEFORE' or 'AFTER'.")
+
+        command = f"*{4 + len(values)}\r\n$7\r\nLINSERT\r\n${len(key)}\r\n{key}\r\n${len(options[position])}\r\n{options[position]}\r\n${len(pivot)}\r\n{pivot}\r\n"
+        for value in values:
+            command += f"${len(str(value))}\r\n{value}\r\n"
+        return self._send_command(command)
+
+    def lists_get_lrange(self, key, start, stop):
+        command = f"*4\r\n$6\r\nLRANGE\r\n${len(key)}\r\n{key}\r\n${len(str(start))}\r\n{start}\r\n${len(str(stop))}\r\n{stop}\r\n"
+        return self._send_command(command)
+
+    def lists_del_lrem(self, key, count, element):
+        command = f"*4\r\n$4\r\nLREM\r\n${len(key)}\r\n{key}\r\n${len(str(count))}\r\n{count}\r\n${len(str(element))}\r\n{element}\r\n"
+        return self._send_command(command)
+
     def ping(self):
         try:
             response = self._send_command("*1\r\n$4\r\nPING\r\n")
@@ -52,25 +76,22 @@ class RedisClient:
     def close(self):
         self.socket.close()
 
-# Example usage:
+
 redis_client = RedisClient()
+# LPUSH
+lpush_response = redis_client.lists_set_lpush("my_list2", "value1", "value2", "value3")
+print("LPUSH Response:", lpush_response)
 
-# Set a string
-set_response = redis_client.strings_set("my_key4", "my_value")
-print("SET Response:", set_response)
+# LINSERT
+#linsert_response = redis_client.lists_update_linsert("my_list", "AFTER", "value1", "new_value")
+#print("LINSERT Response:", linsert_response)
 
-# Get a string
-get_response = redis_client.strings_get("my_key")
-print("GET Response:", get_response)
+# LRANGE
+lrange_response = redis_client.lists_get_lrange("my_list2", 0, -1)
+print("LRANGE Response:", lrange_response)
 
-# Increment a string by a certain value
-incrby_response = redis_client.strings_incrby("counter", 5)
-print("INCRBY Response:", incrby_response)
-
-# Delete multiple keys
-del_response = redis_client.strings_del("my_key4", "key2", "key3")
-print("DEL Response:", del_response)
-
-
+# LREM
+lrem_response = redis_client.lists_del_lrem("my_list", 1, "value2")
+print("LREM Response:", lrem_response)
 redis_client.close()
 
