@@ -23,6 +23,17 @@ class RedisClient:
         self._send_data(command)
         return self._receive_data()
 
+    def ping(self):
+        try:
+            response = self._send_command("*1\r\n$4\r\nPING\r\n")
+            return response.strip() == "+PONG"
+        except Exception as e:
+            print(f"Error during PING: {e}")
+            return False
+
+    def close(self):
+        self.socket.close()
+
     def strings_set(self, key, value):
         command = f"*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(str(value))}\r\n{value}\r\n"
         return self._send_command(command)
@@ -86,36 +97,99 @@ class RedisClient:
         command = f"*4\r\n$5\r\nSMOVE\r\n${len(source)}\r\n{source}\r\n${len(destination)}\r\n{destination}\r\n${len(member)}\r\n{member}\r\n"
         return self._send_command(command)
 
-    def ping(self):
-        try:
-            response = self._send_command("*1\r\n$4\r\nPING\r\n")
-            return response.strip() == "+PONG"
-        except Exception as e:
-            print(f"Error during PING: {e}")
-            return False
-    def close(self):
-        self.socket.close()
+
+
+
+    def zsets_zcard(self, key):
+        command = [
+            "*2\r\n",
+            "$5\r\nZCARD\r\n",
+            f"${len(key)}\r\n{key}\r\n"
+        ]
+
+        #print(''.join(command))
+        return self._send_command(''.join(command))
+
+    def zsets_zrem(self, key, *members):
+        command = [
+            f"*{2 + len(members)}\r\n",
+            "$4\r\nZREM\r\n",
+            f"${len(key)}\r\n{key}\r\n"
+        ]
+
+        for member in members:
+            command.extend([
+                f"${len(str(member))}\r\n{member}\r\n"
+            ])
+
+        print(''.join(command))
+        return self._send_command(''.join(command))
+
+    def zsets_zincrby(self, key, increment, member):
+        command = [
+            "*4\r\n",
+            "$7\r\nZINCRBY\r\n",
+            f"${len(key)}\r\n{key}\r\n",
+            f"${len(str(increment))}\r\n{increment}\r\n",
+            f"${len(str(member))}\r\n{member}\r\n"
+        ]
+
+        print(''.join(command))
+        return self._send_command(''.join(command))
+
+    def zsets_zadd(self, key, *args,nx=False, xx=False, gt=False, lt=False, ch=False, incr=False):
+        if len(args) % 2 == 1:
+            raise ValueError("Invalid number of arguments. Must provide score and member pairs.")
+
+        command = ["*"]
+
+        num_elements = 2 + len(args) + (1 if nx or xx else 0) + (1 if gt or lt else 0) + ch + incr
+        command.append(str(num_elements) + "\r\n")
+
+        command.append("$4\r\nZADD\r\n")
+        command.append(f"${len(key)}\r\n{key}\r\n")
+
+        if nx:
+            command.extend(["$2\r\nNX\r\n"])
+        elif xx:
+            command.extend(["$2\r\nXX\r\n"])
+
+        if lt:
+            command.extend(["$2\r\nGT\r\n"])
+        elif gt:
+            command.extend(["$2\r\nLT\r\n"])
+
+        if ch:
+            command.extend(["$2\r\nCH\r\n"])
+
+        if incr:
+            command.extend(["$4\r\nINCR\r\n"])
+
+        for i in range(0, len(args), 2):
+            score, member = args[i], args[i + 1]
+            command.extend([f"${len(str(score))}\r\n{score}\r\n", f"${len(str(member))}\r\n{member}\r\n"])
+
+        command_str = ''.join(command)
+        print(command_str)
+        return self._send_command(command_str)
 
 
 redis_client = RedisClient()
-srem_response = redis_client.sets_srem("my_set", "member1", "member2")
-print("SREM Response:", srem_response)
 
-# SADD
-sadd_response = redis_client.sets_sadd("my_set", "member3", "member4")
-print("SADD Response:", sadd_response)
+#ZCARD
+#result1 = redis_client.zsets_zcard('my_zset')
+#print(result1)
 
-
-sadd_response2 = redis_client.sets_sadd("my_set2", "ala", "bala")
-print("SADD Response:", sadd_response2)
-
-# SMEMBERS
-smembers_response = redis_client.sets_smembers("my_set")
-print("SMEMBERS Response:", smembers_response)
-
-# SMOVE
-smove_response = redis_client.sets_smove("my_set2", "my_set1", "ala")
-print("SMOVE Response:", smove_response)
+# ZADD
+result = redis_client.zsets_zadd('my_zset',  1, 'one', 2, 'two', 3, 'three', 4, "twelve", nx=False, xx=False, lt=False,
+                                 gt=False, ch=False, incr=False,)
+print(result)
+# ZREM
+#result2 = redis_client.zsets_zrem('my_zset', 'member1', 'member2', 'member3')
+#print(result2)
+# ZINCRBY
+#new_score = redis_client.zsets_zincrby('my_zset', 5.0, 'member2')
+#print(f"New score of member2 in my_zset: {new_score}")
 
 redis_client.close()
 

@@ -81,8 +81,21 @@ class FunctionalitiesGUI:
             elif action == "Delete":
                 keys = args[1].split(",")
                 result = self.redis_client.sets_srem(args[0], *keys)
+        elif data_type == "Sorted Sets":
+            if action == "Create":
+                print(args)
+                keys = args[1].split(",")
+                result = self.redis_client.zsets_zadd(args[0], *keys)
+            elif action == "Read":
+                result = self.redis_client.zsets_zcard(*args)
+            elif action == "Update":
+                result = self.redis_client.zsets_zincrby(*args)
+            elif action == "Delete":
+                keys = args[1].split(",")
+                result = self.redis_client.zsets_zrem(args[0], *keys)
             else:
                 result = "Invalid action"
+
 
         else:
             result = "Invalid data type"
@@ -287,7 +300,94 @@ class FunctionalitiesGUI:
         elif data_type == "Hashes":
             ...
         elif data_type == "Sorted Sets":
-            ...
+            if action == "Read":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Button(frame, text="ZCARD",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get())).grid(row=0,
+                                                                                                           column=2,
+                                                                                                           padx=5,
+                                                                                                           pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=3,
+                                                                                                     pady=5)
+
+            elif action == "Delete":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Member(s):").grid(row=0, column=2, padx=5, pady=5)
+                member_entry = ttk.Entry(frame)
+                member_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="ZREM",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(),
+                                                                member_entry.get())).grid(row=0, column=4, padx=5,
+                                                                                          pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,
+                                                                                                     pady=5)
+
+            elif action == "Update":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Increment:").grid(row=0, column=2, padx=5, pady=5)
+                increment_entry = ttk.Entry(frame)
+                increment_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Member:").grid(row=0, column=4, padx=5, pady=5)
+                member_entry = ttk.Entry(frame)
+                member_entry.grid(row=0, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="ZINCRBY",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(),
+                                                                float(increment_entry.get()), member_entry.get())).grid(
+                    row=0, column=6, padx=5, pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
+                                                                                                     pady=5)
+
+            elif action == "Create":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Score-Member pairs:").grid(row=0, column=2, padx=5, pady=5)
+                score_member_entry = ttk.Entry(frame)
+                score_member_entry.grid(row=0, column=3, padx=5, pady=5)
+
+
+                zadd_option_1_var = tk.StringVar()
+                zadd_option_2_var = tk.StringVar()
+                zadd_option_1 = ttk.Combobox(frame, values=["NX", "XX"], textvariable=zadd_option_1_var)
+                zadd_option_1.grid(row=1, column=1, padx=5, pady=5)
+                zadd_option_2 = ttk.Combobox(frame, values=["GT", "LT"], textvariable=zadd_option_2_var)
+                zadd_option_2.grid(row=1, column=2, padx=5, pady=5)
+
+                ch_var = tk.BooleanVar()
+                ch_checkbox = tk.Checkbutton(frame, text="CH", variable=ch_var)
+                ch_checkbox.grid(row=1, column=3, padx=5, pady=5)
+
+                incr_var = tk.BooleanVar()
+                incr_checkbox = tk.Checkbutton(frame, text="INCR", variable=incr_var)
+                incr_checkbox.grid(row=1, column=4, padx=5, pady=5)
+
+                ttk.Button(frame, text="ZADD",
+                           command=lambda: self.execute_command(data_type, action,name_entry.get(),
+                                                score_member_entry.get(),
+                                                zadd_option_1_var.get() == "NX" if zadd_option_1_var.get() else False,
+                                                zadd_option_1_var.get() == "XX" if zadd_option_1_var.get() else False,
+                                                zadd_option_2_var.get() == "GT" if zadd_option_2_var.get() else False,
+                                                zadd_option_2_var.get() == "LT" if zadd_option_2_var.get() else False,
+                                                ch_var.get(),
+                                                incr_var.get())
+                           ).grid(row=1, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=1, column=6,
+                                                                                                    pady=5)
+
 
     def popup_info(self, data_type, action):
         if data_type == "Strings":
@@ -397,6 +497,40 @@ class FunctionalitiesGUI:
                             f"Remove the specified members from the set stored at key.\n\n"
                             f" Specified members that are not a member of this set are ignored.\n\n"
                             f"If key does not exist, it is treated as an empty set and this command returns 0."
+                             )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+        elif data_type == "Sorted Sets":
+            if action == "Create":
+                info_text = (f"SYNTAX: ZADD key [NX | XX] [GT | LT] [CH] [INCR] score member [score member ...]\n\n"
+                            f"Adds all the specified members with the specified scores to the sorted set stored\n\n"
+                            f" at key.\n\n"
+                            f" If a specified member is already a member of the sorted set, the score is updated and"
+                            f" the element reinserted at the right position to ensure the correct ordering\n\n"
+                            f"redis> ZADD myzset 2 two 3 three\n\n")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
+            elif action == "Read":
+                info_text = (f"SYNTAX: ZCARD key\n\n"
+                             f"Returns the sorted set cardinality (number of elements) "
+                             f"of the sorted set stored at key.\n\n"
+                             f"redis> ZADD myzset 1 one\n\n"
+                             f"(integer) 1")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Update":
+                info_text = (f"SYNNTAX: ZINCRBY key increment member\n\n"
+                            f"Increments the score of member in the sorted set stored at key by increment.\n\n"
+                            f"If member does not exist in the sorted set, it is added with increment as "
+                            f"its score (as if its previous score was 0.0).\n\n"
+                            f"If key does not exist, a new sorted set with the specified"
+                            f" member as its sole member is created.\n\n"
+                            )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Delete":
+                info_text = (
+                            f"SYNTAX: ZREM key member [member ...]\n\n"
+                            f"Removes the specified members from the sorted set stored at key."
+                            f"Non existing members are ignored.\n\n"
+                            f"ZREM myzset two\n\n"
+                            f"(integer) 1"
                              )
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
 
