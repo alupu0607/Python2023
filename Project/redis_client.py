@@ -173,23 +173,82 @@ class RedisClient:
         print(command_str)
         return self._send_command(command_str)
 
+    def hashes_hset(self, key, *args):
+        ### ONLY WORKS IF I HAVE 1 field-value pair
+        if len(args) % 2 != 0:
+            raise ValueError("Invalid number of arguments. Must provide field and value pairs.")
+
+        command = ["*"]
+        num_elements = 2 + len(args)
+        command.append(str(num_elements) + "\r\n")
+
+        command.append("$" + str(len("HSET")) + "\r\nHSET\r\n")
+        command.append(f"${len(key)}\r\n{key}\r\n")
+
+        for i in range(0, len(args), 2):
+            field, value = args[i], args[i + 1]
+            command.extend([f"${len(str(field))}\r\n{field}\r\n", f"${len(str(value))}\r\n{value}\r\n"])
+
+        command_str = ''.join(command)
+        print(command_str)
+        return self._send_command(command_str)
+
+    def hashes_hget(self, key, field):
+        command = [
+            "*3\r\n",
+            "$4\r\nHGET\r\n",
+            f"${len(key)}\r\n{key}\r\n",
+            f"${len(field)}\r\n{field}\r\n"
+        ]
+
+        print(''.join(command))
+        return self._send_command(''.join(command))
+
+    def hashes_hdel(self, key, *fields):
+        command = [
+            f"*{2 + len(fields)}\r\n",
+            "$4\r\nHDEL\r\n",
+            f"${len(key)}\r\n{key}\r\n"
+        ]
+
+        for field in fields:
+            command.extend([
+                f"${len(str(field))}\r\n{field}\r\n"
+            ])
+
+        print(''.join(command))
+        return self._send_command(''.join(command))
+
+    def hashes_hincrby(self, key, field, increment):
+        command = [
+            "*4\r\n",
+            "$7\r\nHINCRBY\r\n",
+            f"${len(key)}\r\n{key}\r\n",
+            f"${len(field)}\r\n{field}\r\n",
+            f"${len(str(increment))}\r\n{increment}\r\n"
+        ]
+
+        print(''.join(command))
+        return self._send_command(''.join(command))
 
 redis_client = RedisClient()
 
-#ZCARD
-#result1 = redis_client.zsets_zcard('my_zset')
-#print(result1)
 
-# ZADD
-result = redis_client.zsets_zadd('my_zset',  1, 'one', 2, 'two', 3, 'three', 4, "twelve", nx=False, xx=False, lt=False,
-                                 gt=False, ch=False, incr=False,)
-print(result)
-# ZREM
-#result2 = redis_client.zsets_zrem('my_zset', 'member1', 'member2', 'member3')
-#print(result2)
-# ZINCRBY
-#new_score = redis_client.zsets_zincrby('my_zset', 5.0, 'member2')
-#print(f"New score of member2 in my_zset: {new_score}")
+# HSET
+result_hset = redis_client.hashes_hset('my_hash2', 'field1', 'value1')
+print(result_hset)
+
+# HGET
+result_hget = redis_client.hashes_hget('my_hash', 'value1')
+print(result_hget)
+
+# HDEL
+result_hdel = redis_client.hashes_hdel('my_hash', 'field1', 'field3')
+print(result_hdel)
+
+# HINCRBY
+result_hincrby = redis_client.hashes_hincrby('my_hash', 'counter', 5)
+print(result_hincrby)
 
 redis_client.close()
 

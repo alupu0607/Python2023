@@ -95,6 +95,18 @@ class FunctionalitiesGUI:
                 result = self.redis_client.zsets_zrem(args[0], *keys)
             else:
                 result = "Invalid action"
+        elif data_type == "Hashes":
+            if action == "Create":
+                result = self.redis_client.hashes_hset(*args)
+            elif action == "Read":
+                result = self.redis_client.hashes_hget(*args)
+            elif action == "Update":
+                result = self.redis_client.hashes_hincrby(*args)
+            elif action == "Delete":
+                keys = args[1].split(",")
+                result = self.redis_client.hashes_hdel(args[0], *keys)
+            else:
+                result = "Invalid action"
 
 
         else:
@@ -298,7 +310,77 @@ class FunctionalitiesGUI:
                 ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,
                                                                                                      pady=5)
         elif data_type == "Hashes":
-            ...
+            if action == "Create":
+                ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
+                name_entry = ttk.Entry(frame)
+                name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Field:").grid(row=0, column=2, padx=5, pady=5)
+                field_entry = ttk.Entry(frame)
+                field_entry.grid(row=0, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Value:").grid(row=0, column=4, padx=5, pady=5)
+                value_entry = ttk.Entry(frame)
+                value_entry.grid(row=0, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="HSET",
+                           command=lambda: self.execute_command(data_type, action, name_entry.get(),
+                                                                field_entry.get(), value_entry.get())).grid(row=0,
+                                                                                                            column=6,
+                                                                                                            padx=5,
+                                                                                                            pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=7,
+                                                                                                    pady=5)
+            elif action == "Read":
+                ttk.Label(frame, text="Key:").grid(row=1, column=0, padx=5, pady=5)
+                hget_name_entry = ttk.Entry(frame)
+                hget_name_entry.grid(row=1, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Field:").grid(row=1, column=2, padx=5, pady=5)
+                hget_field_entry = ttk.Entry(frame)
+                hget_field_entry.grid(row=1, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="HGET",
+                           command=lambda: self.execute_command(data_type, action, hget_name_entry.get(),
+                                                                hget_field_entry.get())).grid(row=1, column=4, padx=5,
+                                                                                              pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=1, column=5,
+                                                                                                    pady=5)
+            elif action == "Update":
+                ttk.Label(frame, text="Key:").grid(row=3, column=0, padx=5, pady=5)
+                hincrby_name_entry = ttk.Entry(frame)
+                hincrby_name_entry.grid(row=3, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Field:").grid(row=3, column=2, padx=5, pady=5)
+                hincrby_field_entry = ttk.Entry(frame)
+                hincrby_field_entry.grid(row=3, column=3, padx=5, pady=5)
+
+                ttk.Label(frame, text="Increment:").grid(row=3, column=4, padx=5, pady=5)
+                hincrby_increment_entry = ttk.Entry(frame)
+                hincrby_increment_entry.grid(row=3, column=5, padx=5, pady=5)
+
+                ttk.Button(frame, text="HINCRBY",
+                           command=lambda: self.execute_command(data_type, action, hincrby_name_entry.get(),
+                                                                hincrby_field_entry.get(),
+                                                                hincrby_increment_entry.get())).grid(row=3, column=6,
+                                                                                                     padx=5, pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=3, column=7,
+                                                                                                       pady=5)
+            elif action == "Delete":
+                ttk.Label(frame, text="Key:").grid(row=2, column=0, padx=5, pady=5)
+                hdel_name_entry = ttk.Entry(frame)
+                hdel_name_entry.grid(row=2, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="Field(s):").grid(row=2, column=2, padx=5, pady=5)
+                hdel_field_entry = ttk.Entry(frame)
+                hdel_field_entry.grid(row=2, column=3, padx=5, pady=5)
+
+                ttk.Button(frame, text="HDEL",
+                           command=lambda: self.execute_command(data_type, action, hdel_name_entry.get(),
+                                                                hdel_field_entry.get())).grid(row=2, column=4, padx=5,
+                                                                                              pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=2, column=5,
+                                                                                                    pady=5)
         elif data_type == "Sorted Sets":
             if action == "Read":
                 ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
@@ -533,7 +615,41 @@ class FunctionalitiesGUI:
                             f"(integer) 1"
                              )
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:",info_text)
-
+        elif data_type == "Hashes":
+            if action == "Create":
+                info_text = (f"SYNTAX: HSET key field value\n\n"
+                             f"Sets the specified fields to their respective values in the hash stored at key.\n\n"
+                             f"This command overwrites the values of specified fields that exist in the hash."
+                             f"If key doesn't exist, a new key holding a hash is created.\n\n"
+                             f"redis> HSET myhash field1 Hello"
+                             f"(integer) 1\n\n"
+                             )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Read":
+                info_text = (f"HGET key field\n\n"
+                             f"Returns the value associated with field in the hash stored at key.\n\n "
+                             f"redis> HGET myhash field1\n\n"
+                             f"foo")
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Update":
+                info_text = (f"SYNNTAX: HINCRBY key field increment\n\n"
+                             f"Increments the number stored at field in the hash stored at key by increment.\n\n"
+                             f"If key does not exist, a new key holding a hash is created.\n\n"
+                             f"If field does not exist the value is set to 0 before the operation is performed.\n\n"
+                             f"redis>HINCRBY myhash field 1\n\n"
+                             f"(integer) 6\n\n"
+                             )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
+            elif action == "Delete":
+                info_text = (
+                    f"SYNTAX: HDEL key field [field ...]\n\n"
+                    f"Removes the specified fields from the hash stored at key."
+                    f"Specified fields that do not exist within this hash are ignored.\n\n"
+                    f"If key does not exist, it is treated as an empty hash and this command returns 0.\n\n"
+                    f"redis> HDEL myhash field1\n\n"
+                    f"(integer) 1"
+                )
+                messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
 
     def stop(self):
         self.redis_client.close()
