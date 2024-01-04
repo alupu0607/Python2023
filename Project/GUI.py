@@ -4,7 +4,37 @@ from redis_client import RedisClient
 import sys
 
 class FunctionalitiesGUI:
+    """This class represents the Functionalities GUI for the RESP GUI application.
+
+    Args:
+        master (tk.Tk): The master Tkinter window.
+        redis_client (RedisClient): An instance of the RedisClient class for communication with the Redis server.
+
+    Attributes:
+        master (tk.Tk): The master Tkinter window.
+        redis_client (RedisClient): An instance of the RedisClient class.
+        functionalities_window (tk.Toplevel): The Toplevel window for functionalities.
+        functionality_info_label (ttk.Label): The label displaying information about CRUD operations.
+        notebook (ttk.Notebook): The notebook widget for organizing CRUD operation tabs.
+        result_label (scrolledtext.ScrolledText): The scrolled text widget for displaying execution results.
+        functionalities_instance: An instance of the FunctionalitiesGUI class.
+        Actions (list): A list of CRUD actions.
+
+    Methods:
+        __init__(self, master, redis_client): Initializes a new instance of the FunctionalitiesGUI class.
+        execute_command(self, data_type, action, *args): Executes a Redis command based on the selected data type and action.
+        create_tab(self, data_type): Creates a tab for a specific data type in the notebook.
+        create_buttons(self, frame, data_type, action): Creates buttons for a specific data type and action.
+        popup_info(self, data_type, action): Displays information about the selected data type and action.
+        stop(self): Stops the application and closes the Redis connection.
+    """
     def __init__(self, master, redis_client):
+        """Initializes a new instance of the FunctionalitiesGUI class.
+
+        Args:
+            master (tk.Tk): The master Tkinter window.
+            redis_client (RedisClient): An instance of the RedisClient class.
+        """
         self.master = master
         self.redis_client = redis_client
 
@@ -46,6 +76,16 @@ class FunctionalitiesGUI:
         file_menu.add_command(label="Exit", command=self.stop)
 
     def execute_command(self, data_type, action, *args):
+        """Executes a Redis command based on the selected data type and action.
+
+        Args:
+            data_type (str): The selected data type (e.g., "Strings", "Lists").
+            action (str): The selected action (e.g., "Create", "Read").
+            args: Variable-length arguments required for the command.
+
+        Returns:
+            str: The result of the Redis command execution.
+        """
         if data_type == "Strings":
             if action == "Create":
                 result = self.redis_client.strings_set(*args)
@@ -119,6 +159,11 @@ class FunctionalitiesGUI:
         self.result_label.config(state=tk.DISABLED)
 
     def create_tab(self, data_type):
+        """Creates a tab for a specific data type in the notebook.
+
+        Args:
+            data_type (str): The data type for which to create a tab.
+        """
         frame = ttk.Frame(self.notebook)
 
         sub_notebook = ttk.Notebook(frame)
@@ -132,6 +177,13 @@ class FunctionalitiesGUI:
         self.notebook.add(frame, text=data_type)
 
     def create_buttons(self, frame, data_type, action):
+        """Creates buttons for a specific data type and action.
+
+        Args:
+            frame (ttk.Frame): The frame in which to create buttons.
+            data_type (str): The selected data type (e.g., "Strings", "Lists").
+            action (str): The selected action (e.g., "Create", "Read").
+        """
         if data_type == "Strings":
             if action == "Create":
                 ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
@@ -472,6 +524,12 @@ class FunctionalitiesGUI:
 
 
     def popup_info(self, data_type, action):
+        """Displays information about the selected data type and action.
+
+        Args:
+            data_type (str): The selected data type (e.g., "Strings", "Lists").
+            action (str): The selected action (e.g., "Create", "Read").
+        """
         if data_type == "Strings":
             if action == "Create":
                 info_text = (f"Set key to hold the string value. If key already holds a value, it is overwritten, regardless of its type. Any previous time to live associated with the key is discarded on successful SET operation."
@@ -652,23 +710,52 @@ class FunctionalitiesGUI:
                 messagebox.showinfo(f"Information about {action} operation on {data_type}:", info_text)
 
     def stop(self):
+        """ Stops the application and closes the Redis connection. """
         self.redis_client.close()
         self.master.destroy()
         sys.exit()
 
     def open_welcome_gui(self):
+        """Opens the Welcome GUI, hiding the Functionalities GUI if it is currently open.
+
+        If the Functionalities GUI instance exists, it will be withdrawn, and the Welcome GUI will be deiconified.
+        """
         if self.functionalities_instance:
             self.functionalities_instance.master.withdraw()
 
         self.master.deiconify()
 
     def open_functionalities_gui(self):
+        """Opens the Functionalities GUI, hiding the Welcome GUI.
+
+        If the Functionalities GUI instance doesn't exist, a new instance will be created.
+        """
         self.master.withdraw()
         FunctionalitiesGUI(self.master, self.redis_client)
 
 
 
 class WelcomeGUI:
+    """This class represents the main graphical user interface for the Welcome screen of the RESP GUI application.
+
+    Args:
+        master (tk.Tk): The master Tkinter window.
+
+    Attributes:
+        master (tk.Tk): The master Tkinter window.
+        label (ttk.Label): The main label displaying the welcome message.
+        description_text (tk.Text): The text widget displaying information about RESP.
+        status_label (ttk.Label): The label indicating the status of the Redis server.
+        ping_button (tk.Button): The button to check the status of the Redis server.
+        redis_client (RedisClient): An instance of the RedisClient class for communication with the Redis server.
+        functionalities_instance (FunctionalitiesGUI): An instance of the FunctionalitiesGUI class.
+
+    Methods:
+        check_ping: Checks the status of the Redis server by sending a PING command.
+        open_welcome_gui: Placeholder method for opening the Welcome GUI.
+        open_functionalities_gui: Opens the Functionalities GUI and hides the Welcome GUI.
+        stop: Stops the application, closing the Redis connection and exiting the program.
+    """
     def __init__(self, master):
         self.master = master
 
@@ -711,6 +798,15 @@ class WelcomeGUI:
         self.functionalities_instance = None
 
     def check_ping(self):
+        """Checks the status of the Redis server by sending a PING command.
+
+        If the PING is successful, opens the Functionalities GUI and hides the Welcome GUI.
+
+        If the PING fails, prints an error message.
+
+        Returns:
+            None
+        """
         try:
             ping_success = self.redis_client.ping()
 
@@ -726,9 +822,21 @@ class WelcomeGUI:
             print("NOT OK")
 
     def open_welcome_gui(self):
+        """Placeholder method for opening the Welcome GUI.
+
+        Returns:
+            None
+        """
         ...
 
     def open_functionalities_gui(self):
+        """Opens the Functionalities GUI and hides the Welcome GUI.
+
+        If the Functionalities GUI instance does not exist, creates a new instance.
+
+        Returns:
+            None
+        """
         self.master.withdraw()
         if not self.functionalities_instance:
             self.functionalities_instance = FunctionalitiesGUI(self.master, self.redis_client)
@@ -736,11 +844,21 @@ class WelcomeGUI:
             self.functionalities_instance.master.deiconify()
 
     def stop(self):
+        """Stops the application, closing the Redis connection and exiting the program.
+
+        Returns:
+            None
+        """
         self.redis_client.close()
         self.master.destroy()
         sys.exit()
 
 def main():
+    """Main function to create and run the Welcome GUI.
+
+        Returns:
+            None
+    """
     root = tk.Tk()
     app = WelcomeGUI(root)
     root.mainloop()
