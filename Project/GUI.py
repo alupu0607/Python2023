@@ -194,8 +194,57 @@ class FunctionalitiesGUI:
                 value_entry = ttk.Entry(frame)
                 value_entry.grid(row=0, column=3, padx=5, pady=5)
 
-                ttk.Button(frame, text="SET", command=lambda: self.execute_command(data_type, action, name_entry.get(),value_entry.get())).grid(row=0,column=4,padx=5,pady=5)
-                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=0, column=5,pady=5)
+                nx_var = tk.BooleanVar()
+                xx_var = tk.BooleanVar()
+
+                ttk.Checkbutton(frame, text="NX", variable=nx_var).grid(row=0, column=4, padx=5, pady=5)
+                ttk.Checkbutton(frame, text="XX", variable=xx_var).grid(row=0, column=5, padx=5, pady=5)
+
+                get_var = tk.BooleanVar()
+
+                ttk.Checkbutton(frame, text="GET", variable=get_var).grid(row=0, column=6, padx=5, pady=5)
+
+                # Row 1
+                ttk.Label(frame, text="EX (seconds):").grid(row=1, column=0, padx=5, pady=5)
+                ex_entry = ttk.Entry(frame)
+                ex_entry.grid(row=1, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="PX (milliseconds):").grid(row=1, column=2, padx=5, pady=5)
+                px_entry = ttk.Entry(frame)
+                px_entry.grid(row=1, column=3, padx=5, pady=5)
+
+                # Row 2
+                ttk.Label(frame, text="EXAT (unix-time-seconds):").grid(row=2, column=0, padx=5, pady=5)
+                exat_entry = ttk.Entry(frame)
+                exat_entry.grid(row=2, column=1, padx=5, pady=5)
+
+                ttk.Label(frame, text="PXAT (unix-time-milliseconds):").grid(row=2, column=2, padx=5, pady=5)
+                pxat_entry = ttk.Entry(frame)
+                pxat_entry.grid(row=2, column=3, padx=5, pady=5)
+
+                # Row 3
+                keepttl_var = tk.BooleanVar()
+
+                ttk.Checkbutton(frame, text="KEEPTTL", variable=keepttl_var).grid(row=3, column=0, columnspan=2, padx=5,
+                                                                                  pady=5)
+
+                ttk.Button(frame, text="SET", command=lambda: self.execute_command(
+                    data_type,
+                    action,
+                    name_entry.get(),
+                    value_entry.get(),
+                    nx_var.get(),
+                    xx_var.get(),
+                    get_var.get(),
+                    int(ex_entry.get()) if ex_entry.get() else None,
+                    int(px_entry.get()) if px_entry.get() else None,
+                    int(exat_entry.get()) if exat_entry.get() else None,
+                    int(pxat_entry.get()) if pxat_entry.get() else None,
+                    keepttl_var.get()
+                )).grid(row=3, column=2, padx=5, pady=5)
+                ttk.Button(frame, text="❔", command=lambda: self.popup_info(data_type, action)).grid(row=3, column=3,
+                                                                                                     columnspan=3,
+                                                                                                     pady=5)
             elif action == "Read":
                 ttk.Label(frame, text="Key:").grid(row=0, column=0, padx=5, pady=5)
                 name_entry = ttk.Entry(frame)

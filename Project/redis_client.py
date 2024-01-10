@@ -114,17 +114,55 @@ class RedisClient:
         """
         self.socket.close()
 
-    def strings_set(self, key, value):
+    def strings_set(self, key, value, nx=False, xx=False, get=False, ex=None, px=None, exat=None, pxat=None,
+                    keepttl=False):
         """Set the value of a key in Redis.
 
         Args:
             key (str): The key to set.
             value (str): The value to associate with the key.
+            nx (bool): Only set the key if it does not exist.
+            xx (bool): Only set the key if it already exists.
+            get (bool): Return the old value of the key if it exists.
+            ex (int): Set the specified expire time in seconds.
+            px (int): Set the specified expire time in milliseconds.
+            exat (int): Set the expire time using the UNIX timestamp in seconds.
+            pxat (int): Set the expire time using the UNIX timestamp in milliseconds.
+            keepttl (bool): Retain the time to live associated with the key.
 
         Returns:
             str: The Redis server response.
         """
-        command = f"*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(str(value))}\r\n{value}\r\n"
+        command_parts = ["*"]
+
+        num_elements = 3 + (1 if nx or xx else 0) + (1 if get else 0) + (2 if ex is not None else 0) + \
+                       (2 if px is not None else 0) + (2 if exat is not None else 0) + (2 if pxat is not None else 0) + \
+                       (1 if keepttl else 0)
+        command_parts.append(str(num_elements) + "\r\n")
+
+        command_parts.extend(["$3\r\nSET\r\n", f"${len(key)}\r\n{key}\r\n", f"${len(str(value))}\r\n{value}\r\n"])
+
+        if nx:
+            command_parts.extend(["$2\r\nNX\r\n"])
+        elif xx:
+            command_parts.extend(["$2\r\nXX\r\n"])
+
+        if get:
+            command_parts.extend(["$3\r\nGET\r\n"])
+
+        if ex is not None:
+            command_parts.extend(["$2\r\nEX\r\n", f"${len(str(ex))}\r\n{ex}\r\n"])
+        elif px is not None:
+            command_parts.extend(["$2\r\nPX\r\n", f"${len(str(px))}\r\n{px}\r\n"])
+        elif exat is not None:
+            command_parts.extend(["$4\r\nEXAT\r\n", f"${len(str(exat))}\r\n{exat}\r\n"])
+        elif pxat is not None:
+            command_parts.extend(["$4\r\nPXAT\r\n", f"${len(str(pxat))}\r\n{pxat}\r\n"])
+        elif keepttl:
+            command_parts.extend(["$7\r\nKEEPTTL\r\n"])
+
+        command = ''.join(command_parts)
+        print(command)
         return self._send_command(command)
 
     def strings_get(self, key):
@@ -500,7 +538,6 @@ class RedisClient:
         print(''.join(command))
         return self._send_command(''.join(command))
 
-#redis_client = RedisClient()
-
+# = RedisClient()
 #redis_client.close()
 
